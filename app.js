@@ -257,13 +257,23 @@
   function taskId(date, platform, taskName) {
     return `${formatDate(date)}__${platform}__${normalizeText(taskName)}`;
   }
+function isCompleted(date, platform, taskName) {
+    const id = taskId(date, platform, taskName);
 
-  function isCompleted(date, platform, taskName) {
-    return Boolean(
-      state.completed[
-        taskId(date, platform, taskName)
-      ]
-    );
+    // Se você marcou manualmente esta tarefa,
+    // respeitamos essa escolha.
+    if (
+      Object.prototype.hasOwnProperty.call(
+        state.completed,
+        id
+      )
+    ) {
+      return state.completed[id];
+    }
+
+    // Caso contrário, o checkbox acompanha
+    // automaticamente o planejamento.
+    return isProgrammed(taskName, date);
   }
 
   function setCompleted(
