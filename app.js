@@ -1,9 +1,8 @@
 (() => {
-  const STORAGE_KEY = "pazy-content-planner-v3";
+  const STORAGE_KEY = "pazy-content-planner-v4";
 
   /* =========================================================
      ROTINA FIXA
-     JavaScript:
      0 = domingo
      1 = segunda
      2 = terça
@@ -16,44 +15,54 @@
   const ROUTINES = {
     instagramTikTok: {
       0: ["Story Cartinha"],
+
       1: [
         "Corte Pazy by Pazy",
         "Carrossel",
         "Frase",
         "Story Cartinha"
       ],
+
       2: [
         "Corte Pazy by Pazy",
         "Story Artigo com Link",
         "Carrossel Artigo",
         "Story Cartinha"
       ],
+
       3: [
         "Corte Pazy by Pazy",
         "Frase",
         "Story Cartinha"
       ],
+
       4: [
         "Story Podcast",
         "Corte Podcast",
         "Story Cartinha"
       ],
+
       5: [
         "Story Pazy by Pazy",
         "Corte Pazy by Pazy",
         "Story Cartinha"
       ],
+
       6: ["Story Cartinha"]
     },
 
     linkedin: {
       1: ["Post 3000"],
+
       2: ["Artigo"],
+
       3: ["Post TI"],
+
       4: [
         "Colocar link (caso tenha vídeo)",
         "Vídeo Curto Podcast"
       ],
+
       5: ["Carrossel LinkedIn"]
     }
   };
@@ -63,9 +72,9 @@
   ========================================================= */
 
   const INITIAL_PROGRAMMED_UNTIL = {
-    "Cartinha": "2026-11-06",
-    "Frase": "2026-10-28",
-    "Carrossel": "2026-10-26",
+    Cartinha: "2026-11-06",
+    Frase: "2026-10-28",
+    Carrossel: "2026-10-26",
     "Carrossel Artigo": "2026-10-26",
     "Carrossel LinkedIn": "2026-10-30",
     "Post TI": "2026-10-28",
@@ -96,35 +105,75 @@ Papo Com A Pazy Programados até dia`;
   const state = loadState();
 
   function loadState() {
-    let saved = null;
-
     try {
-      saved =
-        JSON.parse(
-          localStorage.getItem(STORAGE_KEY) || "null"
-        );
+      const saved = JSON.parse(
+        localStorage.getItem(STORAGE_KEY) || "null"
+      );
+
+      if (saved) {
+        return {
+          currentWeek: saved.currentWeek
+            ? new Date(`${saved.currentWeek}T12:00:00`)
+            : getMonday(new Date()),
+
+          manualDone: saved.manualDone || {},
+
+          extras: saved.extras || {},
+
+          programmedUntil: {
+            ...INITIAL_PROGRAMMED_UNTIL,
+            ...(saved.programmedUntil || {})
+          },
+
+          planningNote:
+            saved.planningNote || INITIAL_NOTE
+        };
+      }
 
       /*
-       * Caso exista o estado da versão anterior,
-       * aproveitamos o que der para aproveitar.
+       * Tenta aproveitar dados das versões anteriores.
        */
-      if (!saved) {
-        const old =
-          JSON.parse(
-            localStorage.getItem(
-              "pazy-content-planner-v2"
-            ) || "null"
-          );
+      const oldV3 = JSON.parse(
+        localStorage.getItem(
+          "pazy-content-planner-v3"
+        ) || "null"
+      );
 
-        if (old) {
-          saved = old;
-        }
+      if (oldV3) {
+        return {
+          currentWeek: oldV3.currentWeek
+            ? new Date(`${oldV3.currentWeek}T12:00:00`)
+            : getMonday(new Date()),
+
+          /*
+           * IMPORTANTE:
+           * Não herdamos automaticamente a lógica
+           * antiga de "programado = feito".
+           */
+          manualDone: oldV3.manualDone || {},
+
+          extras: oldV3.extras || {},
+
+          programmedUntil: {
+            ...INITIAL_PROGRAMMED_UNTIL,
+            ...(oldV3.programmedUntil || {})
+          },
+
+          planningNote:
+            oldV3.planningNote || INITIAL_NOTE
+        };
       }
-    } catch {
-      saved = null;
-    }
 
-    if (!saved) {
+      return {
+        currentWeek: getMonday(new Date()),
+        manualDone: {},
+        extras: {},
+        programmedUntil: {
+          ...INITIAL_PROGRAMMED_UNTIL
+        },
+        planningNote: INITIAL_NOTE
+      };
+    } catch {
       return {
         currentWeek: getMonday(new Date()),
         manualDone: {},
@@ -135,51 +184,17 @@ Papo Com A Pazy Programados até dia`;
         planningNote: INITIAL_NOTE
       };
     }
-
-    return {
-      currentWeek: saved.currentWeek
-        ? new Date(
-            `${saved.currentWeek}T12:00:00`
-          )
-        : getMonday(new Date()),
-
-      manualDone:
-        saved.manualDone ||
-        saved.completed ||
-        {},
-
-      extras:
-        saved.extras || {},
-
-      programmedUntil: {
-        ...INITIAL_PROGRAMMED_UNTIL,
-        ...(saved.programmedUntil || {})
-      },
-
-      planningNote:
-        saved.planningNote ||
-        INITIAL_NOTE
-    };
   }
 
   function saveState() {
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
-        currentWeek:
-          formatDate(state.currentWeek),
-
-        manualDone:
-          state.manualDone,
-
-        extras:
-          state.extras,
-
-        programmedUntil:
-          state.programmedUntil,
-
-        planningNote:
-          state.planningNote
+        currentWeek: formatDate(state.currentWeek),
+        manualDone: state.manualDone,
+        extras: state.extras,
+        programmedUntil: state.programmedUntil,
+        planningNote: state.planningNote
       })
     );
   }
@@ -190,82 +205,57 @@ Papo Com A Pazy Programados até dia`;
 
   function getMonday(date) {
     const d = new Date(date);
-
     d.setHours(12, 0, 0, 0);
 
     const day = d.getDay();
 
-    const diff =
-      day === 0
-        ? -6
-        : 1 - day;
+    const diff = day === 0 ? -6 : 1 - day;
 
-    d.setDate(
-      d.getDate() + diff
-    );
+    d.setDate(d.getDate() + diff);
 
     return d;
   }
 
   function addDays(date, amount) {
     const d = new Date(date);
-
-    d.setDate(
-      d.getDate() + amount
-    );
-
+    d.setDate(d.getDate() + amount);
     return d;
   }
 
   function getToday() {
     const d = new Date();
-
     d.setHours(12, 0, 0, 0);
-
     return d;
   }
 
   function formatDate(date) {
     return [
       date.getFullYear(),
-      String(
-        date.getMonth() + 1
-      ).padStart(2, "0"),
-      String(
-        date.getDate()
-      ).padStart(2, "0")
+      String(date.getMonth() + 1).padStart(2, "0"),
+      String(date.getDate()).padStart(2, "0")
     ].join("-");
   }
 
   function formatBR(date) {
-    return date.toLocaleDateString(
-      "pt-BR",
-      {
-        day: "2-digit",
-        month: "2-digit"
-      }
-    );
+    return date.toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit"
+    });
   }
 
   function formatLongDate(date) {
-    return date.toLocaleDateString(
-      "pt-BR",
-      {
-        weekday: "long",
-        day: "2-digit",
-        month: "long",
-        year: "numeric"
-      }
-    );
+    return date.toLocaleDateString("pt-BR", {
+      weekday: "long",
+      day: "2-digit",
+      month: "long",
+      year: "numeric"
+    });
   }
 
   function formatWeekRange(start) {
-    const end =
-      addDays(start, 6);
+    const end = addDays(start, 6);
 
-    return (
-      `${formatBR(start)} — ${formatBR(end)}`
-    );
+    return `${formatBR(start)} — ${formatBR(end)}`;
   }
 
   function isToday(date) {
@@ -282,10 +272,7 @@ Papo Com A Pazy Programados até dia`;
   function normalizeText(text) {
     return String(text)
       .normalize("NFD")
-      .replace(
-        /[\u0300-\u036f]/g,
-        ""
-      )
+      .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase()
       .trim();
   }
@@ -296,19 +283,15 @@ Papo Com A Pazy Programados até dia`;
       .replaceAll("<", "&lt;")
       .replaceAll(">", "&gt;")
       .replaceAll('"', "&quot;")
-      .replaceAll(
-        "'",
-        "&#039;"
-      );
+      .replaceAll("'", "&#039;");
   }
 
   /* =========================================================
-     MAPEAMENTO DE NOMES
+     MAPA DE PROGRAMAÇÃO
   ========================================================= */
 
   function getPlanningKey(taskName) {
-    const normalized =
-      normalizeText(taskName);
+    const normalized = normalizeText(taskName);
 
     if (
       normalized === "cartinha" ||
@@ -324,127 +307,75 @@ Papo Com A Pazy Programados até dia`;
       return "Frase";
     }
 
-    if (
-      normalized === "carrossel"
-    ) {
+    if (normalized === "carrossel") {
       return "Carrossel";
     }
 
-    if (
-      normalized ===
-      "story artigo com link"
-    ) {
+    if (normalized === "story artigo com link") {
       return "Artigo";
     }
 
-    if (
-      normalized ===
-      "carrossel artigo"
-    ) {
+    if (normalized === "carrossel artigo") {
       return "Carrossel Artigo";
     }
 
-    if (
-      normalized ===
-      "carrossel linkedin"
-    ) {
+    if (normalized === "carrossel linkedin") {
       return "Carrossel LinkedIn";
     }
 
-    if (
-      normalized ===
-      "story pazy by pazy"
-    ) {
+    if (normalized === "story pazy by pazy") {
       return "Pazy by Pazy";
     }
 
-    if (
-      normalized ===
-      "pazy by pazy"
-    ) {
+    if (normalized === "pazy by pazy") {
       return "Pazy by Pazy";
     }
 
-    if (
-      normalized ===
-      "corte pazy by pazy"
-    ) {
+    if (normalized === "corte pazy by pazy") {
       return "Corte Pazy by Pazy";
     }
 
-    if (
-      normalized === "post ti"
-    ) {
+    if (normalized === "post ti") {
       return "Post TI";
     }
 
-    if (
-      normalized === "post 3000"
-    ) {
+    if (normalized === "post 3000") {
       return "Post 3000";
     }
 
-    if (
-      normalized === "artigo"
-    ) {
+    if (normalized === "artigo") {
       return "Artigo";
     }
 
-    if (
-      normalized ===
-      "story podcast"
-    ) {
+    if (normalized === "story podcast") {
       return "Story Podcast";
     }
 
-    if (
-      normalized ===
-      "corte podcast"
-    ) {
+    if (normalized === "corte podcast") {
       return "Corte Podcast";
     }
 
-    if (
-      normalized.includes(
-        "video curto podcast"
-      )
-    ) {
+    if (normalized.includes("video curto podcast")) {
       return "Vídeo Curto Podcast";
     }
 
-    if (
-      normalized.includes(
-        "colocar link"
-      )
-    ) {
+    if (normalized.includes("colocar link")) {
       return "Colocar link (caso tenha vídeo)";
     }
 
-    if (
-      normalized ===
-      "o que eu diria"
-    ) {
+    if (normalized === "o que eu diria") {
       return "O que eu diria";
     }
 
-    if (
-      normalized ===
-      "olho no olho"
-    ) {
+    if (normalized === "olho no olho") {
       return "Olho no Olho";
     }
 
-    if (
-      normalized ===
-      "carrossel substack"
-    ) {
+    if (normalized === "carrossel substack") {
       return "Carrossel Substack";
     }
 
-    if (
-      normalized ===
-      "papo com a pazy"
-    ) {
+    if (normalized === "papo com a pazy") {
       return "Papo Com A Pazy";
     }
 
@@ -452,61 +383,28 @@ Papo Com A Pazy Programados até dia`;
   }
 
   function getProgrammedUntil(taskName) {
-    const key =
-      getPlanningKey(taskName);
+    const key = getPlanningKey(taskName);
 
-    return (
-      state.programmedUntil[key] ||
-      null
-    );
+    return state.programmedUntil[key] || null;
   }
 
-  /*
-   * Uma tarefa é programada quando existe
-   * uma data limite e o dia está dentro dessa cobertura.
-   */
-  function isProgrammed(
-    taskName,
-    date
-  ) {
-    const limit =
-      getProgrammedUntil(
-        taskName
-      );
+  function isProgrammed(taskName, date) {
+    const limit = getProgrammedUntil(taskName);
 
     if (!limit) {
       return false;
     }
 
-    return (
-      formatDate(date) <= limit
-    );
-  }
-
-  /*
-   * Não programado:
-   * - ainda não existe uma data de programação
-   * - ou a programação acabou antes dessa data
-   */
-  function isUnplanned(
-    taskName,
-    date
-  ) {
-    return !isProgrammed(
-      taskName,
-      date
-    );
+    return formatDate(date) <= limit;
   }
 
   /* =========================================================
      CHECKLIST MANUAL
+     AQUI ESTÁ A MUDANÇA PRINCIPAL:
+     PROGRAMADO NÃO MARCA CHECKBOX.
   ========================================================= */
 
-  function getTaskId(
-    date,
-    platform,
-    taskName
-  ) {
+  function getTaskId(date, platform, taskName) {
     return [
       formatDate(date),
       platform,
@@ -514,110 +412,24 @@ Papo Com A Pazy Programados até dia`;
     ].join("__");
   }
 
-  function isManuallyDone(
-    date,
-    platform,
-    taskName
-  ) {
+  function isDone(date, platform, taskName) {
     return Boolean(
       state.manualDone[
-        getTaskId(
-          date,
-          platform,
-          taskName
-        )
+        getTaskId(date, platform, taskName)
       ]
     );
   }
 
-  /*
-   * O checkbox aparece ticado quando:
-   * - a tarefa já está programada
-   * OU
-   * - você marcou manualmente como feita.
-   */
-  function isChecked(
-    date,
-    platform,
-    taskName
-  ) {
-    return (
-      isProgrammed(
-        taskName,
-        date
-      ) ||
-      isManuallyDone(
-        date,
-        platform,
-        taskName
-      )
+  function toggleTask(date, platform, taskName) {
+    const id = getTaskId(
+      date,
+      platform,
+      taskName
     );
-  }
 
-  function toggleTask(
-    date,
-    platform,
-    taskName
-  ) {
-    const id =
-      getTaskId(
-        date,
-        platform,
-        taskName
-      );
-
-    const currentlyDone =
-      isManuallyDone(
-        date,
-        platform,
-        taskName
-      );
-
-    /*
-     * Se estava programada, o primeiro clique
-     * significa "eu fiz".
-     */
-    if (
-      isProgrammed(
-        taskName,
-        date
-      ) &&
-      !currentlyDone
-    ) {
-      state.manualDone[id] = true;
-    }
-
-    /*
-     * Se já estava marcada como feita,
-     * o segundo clique desfaz "feito",
-     * mas continua aparecendo ticada
-     * porque continua programada.
-     */
-    else if (
-      isProgrammed(
-        taskName,
-        date
-      ) &&
-      currentlyDone
-    ) {
+    if (state.manualDone[id]) {
       delete state.manualDone[id];
-    }
-
-    /*
-     * Se não era programada,
-     * funciona como um checkbox normal.
-     */
-    else if (
-      !isProgrammed(
-        taskName,
-        date
-      ) &&
-      currentlyDone
-    ) {
-      delete state.manualDone[id];
-    }
-
-    else {
+    } else {
       state.manualDone[id] = true;
     }
 
@@ -631,23 +443,16 @@ Papo Com A Pazy Programados até dia`;
 
   function getExtras(date) {
     return (
-      state.extras[
-        formatDate(date)
-      ] || []
+      state.extras[formatDate(date)] || []
     );
   }
 
-  function addExtra(
-    date,
-    text
-  ) {
-    const clean =
-      String(text || "").trim();
+  function addExtra(date, text) {
+    const clean = String(text || "").trim();
 
     if (!clean) return;
 
-    const key =
-      formatDate(date);
+    const key = formatDate(date);
 
     if (!state.extras[key]) {
       state.extras[key] = [];
@@ -658,9 +463,7 @@ Papo Com A Pazy Programados até dia`;
         `${Date.now()}-${Math.random()
           .toString(16)
           .slice(2)}`,
-
       text: clean,
-
       completed: false
     });
 
@@ -668,26 +471,18 @@ Papo Com A Pazy Programados até dia`;
     render();
   }
 
-  function toggleExtra(
-    date,
-    id
-  ) {
-    const key =
-      formatDate(date);
+  function toggleExtra(date, id) {
+    const key = formatDate(date);
 
-    const list =
-      state.extras[key] || [];
+    const list = state.extras[key] || [];
 
-    const item =
-      list.find(
-        extra =>
-          extra.id === id
-      );
+    const item = list.find(
+      extra => extra.id === id
+    );
 
     if (!item) return;
 
-    item.completed =
-      !item.completed;
+    item.completed = !item.completed;
 
     saveState();
     render();
@@ -698,24 +493,19 @@ Papo Com A Pazy Programados até dia`;
   ========================================================= */
 
   function getTasksForDay(date) {
-    const weekday =
-      date.getDay();
+    const weekday = date.getDay();
 
     return {
       instagramTikTok:
-        ROUTINES.instagramTikTok[
-          weekday
-        ] || [],
+        ROUTINES.instagramTikTok[weekday] || [],
 
       linkedin:
-        ROUTINES.linkedin[
-          weekday
-        ] || []
+        ROUTINES.linkedin[weekday] || []
     };
   }
 
   /* =========================================================
-     HTML DAS TAREFAS
+     VISUAL DA TAREFA
   ========================================================= */
 
   function buildTaskHTML(
@@ -723,100 +513,71 @@ Papo Com A Pazy Programados até dia`;
     platform,
     taskName
   ) {
-    const programmed =
-      isProgrammed(
-        taskName,
-        date
-      );
+    const done = isDone(
+      date,
+      platform,
+      taskName
+    );
 
-    const manuallyDone =
-      isManuallyDone(
-        date,
-        platform,
-        taskName
-      );
+    const programmed = isProgrammed(
+      taskName,
+      date
+    );
 
-    const checked =
-      programmed ||
-      manuallyDone;
+    let classes = "task";
 
-    let classes =
-      "task";
-
-    if (manuallyDone) {
-      classes +=
-        " completed";
+    if (done) {
+      classes += " completed";
     }
-
-    if (
-      programmed &&
-      !manuallyDone
-    ) {
-      classes +=
-        " planned-only";
-    }
-
-    if (
-      isUnplanned(
-        taskName,
-        date
-      )
-    ) {
-      classes +=
-        " unplanned";
-    }
-
-    const id =
-      getTaskId(
-        date,
-        platform,
-        taskName
-      );
 
     return `
       <label
         class="${classes}"
-        title="${
-          manuallyDone
-            ? "Feito manualmente"
-            : programmed
-            ? "Já programado"
-            : "Ainda não programado"
-        }"
       >
 
         <input
           type="checkbox"
           class="task-checkbox"
-          data-task-id="${escapeHTML(id)}"
-          ${checked ? "checked" : ""}
+          data-task-id="${escapeHTML(
+            getTaskId(
+              date,
+              platform,
+              taskName
+            )
+          )}"
+          ${done ? "checked" : ""}
         >
 
         <span class="task-label">
 
-          ${
-            isUnplanned(
-              taskName,
-              date
-            )
-              ? `<span class="unplanned-mark">⚠</span> `
-              : ""
-          }
-
           ${escapeHTML(taskName)}
 
           ${
-            manuallyDone
-              ? `<span
-                   style="
-                     font-size:10px;
-                     color:#888;
-                     margin-left:4px;
-                   "
-                 >
-                   feito
-                 </span>`
-              : ""
+            programmed
+              ? `
+                <span
+                  style="
+                    font-size:10px;
+                    color:#999;
+                    margin-left:5px;
+                    white-space:nowrap;
+                  "
+                >
+                  programado
+                </span>
+              `
+              : `
+                <span
+                  class="unplanned-mark"
+                  title="Ainda não informado como programado"
+                  style="
+                    margin-left:4px;
+                    font-size:11px;
+                  "
+                >
+                  ⚠
+                </span>
+              `
           }
 
         </span>
@@ -830,33 +591,30 @@ Papo Com A Pazy Programados até dia`;
   ========================================================= */
 
   function renderDay(date) {
-    const tasks =
-      getTasksForDay(date);
+    const tasks = getTasksForDay(date);
 
-    const today =
-      isToday(date);
+    const today = isToday(date);
 
     let total = 0;
     let done = 0;
 
-    Object.entries(tasks)
-      .forEach(
-        ([platform, list]) => {
-          list.forEach(task => {
-            total++;
+    Object.entries(tasks).forEach(
+      ([platform, list]) => {
+        list.forEach(task => {
+          total++;
 
-            if (
-              isManuallyDone(
-                date,
-                platform,
-                task
-              )
-            ) {
-              done++;
-            }
-          });
-        }
-      );
+          if (
+            isDone(
+              date,
+              platform,
+              task
+            )
+          ) {
+            done++;
+          }
+        });
+      }
+    );
 
     const percentage =
       total === 0
@@ -877,9 +635,7 @@ Papo Com A Pazy Programados até dia`;
           <span class="day-name">
             ${date.toLocaleDateString(
               "pt-BR",
-              {
-                weekday: "short"
-              }
+              { weekday: "short" }
             )}
           </span>
 
@@ -890,9 +646,7 @@ Papo Com A Pazy Programados até dia`;
           ${
             today
               ? `
-                <span
-                  class="today-label"
-                >
+                <span class="today-label">
                   HOJE
                 </span>
               `
@@ -910,21 +664,17 @@ Papo Com A Pazy Programados até dia`;
             </h3>
 
             <div class="task-list">
-
               ${
-                tasks
-                  .instagramTikTok
-                  .map(
-                    task =>
-                      buildTaskHTML(
-                        date,
-                        "instagramTikTok",
-                        task
-                      )
+                tasks.instagramTikTok
+                  .map(task =>
+                    buildTaskHTML(
+                      date,
+                      "instagramTikTok",
+                      task
+                    )
                   )
                   .join("")
               }
-
             </div>
 
           </div>
@@ -936,17 +686,15 @@ Papo Com A Pazy Programados até dia`;
             </h3>
 
             <div class="task-list">
-
               ${
                 tasks.linkedin.length
                   ? tasks.linkedin
-                      .map(
-                        task =>
-                          buildTaskHTML(
-                            date,
-                            "linkedin",
-                            task
-                          )
+                      .map(task =>
+                        buildTaskHTML(
+                          date,
+                          "linkedin",
+                          task
+                        )
                       )
                       .join("")
                   : `
@@ -960,7 +708,6 @@ Papo Com A Pazy Programados até dia`;
                     </span>
                   `
               }
-
             </div>
 
           </div>
@@ -968,7 +715,6 @@ Papo Com A Pazy Programados até dia`;
           <div class="day-progress">
 
             <div class="progress-text">
-
               <span>
                 ${done}/${total} feitas
               </span>
@@ -976,18 +722,13 @@ Papo Com A Pazy Programados até dia`;
               <span>
                 ${percentage}%
               </span>
-
             </div>
 
             <div class="progress-track">
-
               <div
                 class="progress-bar"
-                style="
-                  width:${percentage}%
-                "
+                style="width:${percentage}%"
               ></div>
-
             </div>
 
           </div>
@@ -1001,11 +742,7 @@ Papo Com A Pazy Programados até dia`;
   function renderWeek() {
     const columns = [];
 
-    for (
-      let i = 0;
-      i < 7;
-      i++
-    ) {
+    for (let i = 0; i < 7; i++) {
       columns.push(
         renderDay(
           addDays(
@@ -1024,102 +761,70 @@ Papo Com A Pazy Programados até dia`;
   ========================================================= */
 
   function renderTodayPanel() {
-    const today =
-      getToday();
+    const today = getToday();
 
-    const tasks =
-      getTasksForDay(today);
+    const tasks = getTasksForDay(today);
 
-    const extras =
-      getExtras(today);
+    const extras = getExtras(today);
 
     return `
-      <aside
-        class="today-panel"
-      >
+      <aside class="today-panel">
 
-        <h3>
-          Hoje
-        </h3>
+        <h3>Hoje</h3>
 
-        <p
-          class="today-panel-date"
-        >
+        <p class="today-panel-date">
           ${escapeHTML(
             formatLongDate(today)
           )}
         </p>
 
-        <section
-          class="today-section"
-        >
+        <section class="today-section">
 
-          <h4
-            class="today-section-title"
-          >
+          <h4 class="today-section-title">
             Instagram / TikTok
           </h4>
 
-          <div
-            class="task-list"
-          >
-
+          <div class="task-list">
             ${
-              tasks
-                .instagramTikTok
-                .map(
-                  task =>
-                    buildTaskHTML(
-                      today,
-                      "instagramTikTok",
-                      task
-                    )
+              tasks.instagramTikTok
+                .map(task =>
+                  buildTaskHTML(
+                    today,
+                    "instagramTikTok",
+                    task
+                  )
                 )
                 .join("")
             }
-
           </div>
 
         </section>
 
-        <section
-          class="today-section"
-        >
+        <section class="today-section">
 
-          <h4
-            class="today-section-title"
-          >
+          <h4 class="today-section-title">
             LinkedIn
           </h4>
 
-          <div
-            class="task-list"
-          >
-
+          <div class="task-list">
             ${
               tasks.linkedin
-                .map(
-                  task =>
-                    buildTaskHTML(
-                      today,
-                      "linkedin",
-                      task
-                    )
+                .map(task =>
+                  buildTaskHTML(
+                    today,
+                    "linkedin",
+                    task
+                  )
                 )
                 .join("")
             }
-
           </div>
 
         </section>
 
-        <section
-          class="today-section"
-        >
+        <section class="today-section">
 
-          <h4
-            class="today-section-title"
-          >
+          <h4 class="today-section-title">
             Tarefas extras
           </h4>
 
@@ -1127,58 +832,52 @@ Papo Com A Pazy Programados até dia`;
 
             ${
               extras.length
-                ? extras
-                    .map(
-                      extra => `
-                        <label
-                          class="task ${
+                ? extras.map(
+                    extra => `
+                      <label
+                        class="task ${
+                          extra.completed
+                            ? "completed"
+                            : ""
+                        }"
+                      >
+
+                        <input
+                          type="checkbox"
+                          data-extra-id="${escapeHTML(
+                            extra.id
+                          )}"
+                          ${
                             extra.completed
-                              ? "completed"
+                              ? "checked"
                               : ""
-                          }"
+                          }
                         >
 
-                          <input
-                            type="checkbox"
-                            data-extra-id="${escapeHTML(
-                              extra.id
-                            )}"
-                            ${
-                              extra.completed
-                                ? "checked"
-                                : ""
-                            }
-                          >
+                        <span class="task-label">
+                          ${escapeHTML(
+                            extra.text
+                          )}
+                        </span>
 
-                          <span
-                            class="task-label"
-                          >
-                            ${escapeHTML(
-                              extra.text
-                            )}
-                          </span>
-
-                        </label>
-                      `
-                    )
-                    .join("")
+                      </label>
+                    `
+                  ).join("")
                 : `
-                    <span
-                      style="
-                        font-size:12px;
-                        color:#999;
-                      "
-                    >
-                      Nenhuma tarefa extra.
-                    </span>
-                  `
+                  <span
+                    style="
+                      font-size:12px;
+                      color:#999;
+                    "
+                  >
+                    Nenhuma tarefa extra.
+                  </span>
+                `
             }
 
           </div>
 
-          <div
-            class="add-extra"
-          >
+          <div class="add-extra">
 
             <input
               id="extra-task-input"
@@ -1198,20 +897,16 @@ Papo Com A Pazy Programados até dia`;
 
         </section>
 
-        <section
-          class="today-section"
-        >
+        <section class="today-section">
 
-          <h4
-            class="today-section-title"
-          >
+          <h4 class="today-section-title">
             ⚠ Não programado
           </h4>
 
-          <div
-            class="task-list"
-          >
+          <div class="task-list">
+
             ${renderUnplannedToday(tasks)}
+
           </div>
 
         </section>
@@ -1223,28 +918,25 @@ Papo Com A Pazy Programados até dia`;
   function renderUnplannedToday(tasks) {
     const list = [];
 
-    Object.entries(tasks)
-      .forEach(
-        ([platform, taskList]) => {
+    Object.entries(tasks).forEach(
+      ([platform, taskList]) => {
+        taskList.forEach(task => {
 
-          taskList.forEach(task => {
+          if (
+            !isProgrammed(
+              task,
+              getToday()
+            )
+          ) {
+            list.push({
+              platform,
+              task
+            });
+          }
 
-            if (
-              isUnplanned(
-                task,
-                getToday()
-              )
-            ) {
-              list.push({
-                platform,
-                task
-              });
-            }
-
-          });
-
-        }
-      );
+        });
+      }
+    );
 
     if (!list.length) {
       return `
@@ -1260,52 +952,44 @@ Papo Com A Pazy Programados até dia`;
       `;
     }
 
-    return list
-      .map(item => {
+    return list.map(item => {
 
-        const done =
-          isManuallyDone(
-            getToday(),
-            item.platform,
-            item.task
-          );
+      const done = isDone(
+        getToday(),
+        item.platform,
+        item.task
+      );
 
-        return `
-          <span
-            style="
-              font-size:12px;
-              line-height:1.4;
-              ${
-                done
-                  ? "color:#999;"
-                  : ""
-              }
-            "
-          >
-            ${done ? "☑" : "⚠"}
-            ${escapeHTML(
-              item.task
-            )}
-          </span>
-        `;
-      })
-      .join("");
+      return `
+        <span
+          style="
+            font-size:12px;
+            line-height:1.4;
+            ${
+              done
+                ? "color:#999;"
+                : ""
+            }
+          "
+        >
+          ${done ? "☑" : "⚠"}
+          ${escapeHTML(item.task)}
+        </span>
+      `;
+
+    }).join("");
   }
 
   /* =========================================================
-     RESUMO DA SEMANA
+     RESUMO:
+     SOMENTE MANUALMENTE FEITAS.
   ========================================================= */
 
   function getWeekSummary() {
     let total = 0;
     let done = 0;
-    let programmed = 0;
 
-    for (
-      let i = 0;
-      i < 7;
-      i++
-    ) {
+    for (let i = 0; i < 7; i++) {
       const date =
         addDays(
           state.currentWeek,
@@ -1315,37 +999,27 @@ Papo Com A Pazy Programados até dia`;
       const tasks =
         getTasksForDay(date);
 
-      Object.entries(tasks)
-        .forEach(
-          ([platform, list]) => {
+      Object.entries(tasks).forEach(
+        ([platform, list]) => {
 
-            list.forEach(task => {
+          list.forEach(task => {
 
-              total++;
+            total++;
 
-              if (
-                isProgrammed(
-                  task,
-                  date
-                )
-              ) {
-                programmed++;
-              }
+            if (
+              isDone(
+                date,
+                platform,
+                task
+              )
+            ) {
+              done++;
+            }
 
-              if (
-                isManuallyDone(
-                  date,
-                  platform,
-                  task
-                )
-              ) {
-                done++;
-              }
+          });
 
-            });
-
-          }
-        );
+        }
+      );
     }
 
     const percentage =
@@ -1358,13 +1032,12 @@ Papo Com A Pazy Programados até dia`;
     return {
       total,
       done,
-      programmed,
       percentage
     };
   }
 
   /* =========================================================
-     ATUALIZAR CONTEÚDOS / NOTES
+     NOTES
   ========================================================= */
 
   function openUpdateModal() {
@@ -1383,29 +1056,17 @@ Papo Com A Pazy Programados até dia`;
         state.planningNote || "";
     }
 
-    modal?.classList.add(
-      "open"
-    );
+    modal?.classList.add("open");
   }
 
   function closeUpdateModal() {
-    const modal =
-      document.getElementById(
-        "update-modal"
-      );
-
-    modal?.classList.remove(
-      "open"
-    );
+    document
+      .getElementById("update-modal")
+      ?.classList.remove("open");
   }
 
-  /*
-   * Identifica qual tipo de conteúdo
-   * a linha da nota está mencionando.
-   */
-  function detectPlanningKey(
-    normalized
-  ) {
+  function detectPlanningKey(normalized) {
+
     if (
       normalized.includes(
         "carrosseis linkedin"
@@ -1556,9 +1217,7 @@ Papo Com A Pazy Programados até dia`;
 
     if (
       normalized === "artigo" ||
-      normalized.startsWith(
-        "artigo "
-      )
+      normalized.startsWith("artigo ")
     ) {
       return "Artigo";
     }
@@ -1566,18 +1225,7 @@ Papo Com A Pazy Programados até dia`;
     return null;
   }
 
-  /*
-   * Procura datas dentro das notas.
-   *
-   * Exemplos aceitos:
-   * 06/11
-   * dia 06/11
-   * até 06/11
-   * programados até dia 06/11
-   */
-  function applyPlanningNote(
-    text
-  ) {
+  function applyPlanningNote(text) {
     const lines =
       String(text || "")
         .split("\n")
@@ -1600,9 +1248,6 @@ Papo Com A Pazy Programados até dia`;
         return;
       }
 
-      /*
-       * Aceita datas com ou sem ano.
-       */
       const match =
         line.match(
           /(\d{1,2})\s*\/\s*(\d{1,2})(?:\s*\/\s*(\d{4}))?/
@@ -1624,11 +1269,7 @@ Papo Com A Pazy Programados até dia`;
           : 2026;
 
       const date =
-        `${year}-${String(
-          month
-        ).padStart(2, "0")}-${String(
-          day
-        ).padStart(2, "0")}`;
+        `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
       state.programmedUntil[
         planningKey
@@ -1641,7 +1282,7 @@ Papo Com A Pazy Programados até dia`;
   }
 
   /* =========================================================
-     RENDER PRINCIPAL
+     RENDER
   ========================================================= */
 
   function render() {
@@ -1653,9 +1294,7 @@ Papo Com A Pazy Programados até dia`;
 
         <header class="header">
 
-          <div
-            class="header-left"
-          >
+          <div class="header-left">
             <div>
 
               <h1 class="title">
@@ -1669,9 +1308,7 @@ Papo Com A Pazy Programados até dia`;
             </div>
           </div>
 
-          <div
-            class="header-actions"
-          >
+          <div class="header-actions">
 
             <button
               class="button"
@@ -1693,10 +1330,7 @@ Papo Com A Pazy Programados até dia`;
 
         </header>
 
-
-        <div
-          class="week-navigation"
-        >
+        <div class="week-navigation">
 
           <button
             class="nav-button"
@@ -1707,10 +1341,7 @@ Papo Com A Pazy Programados até dia`;
             ←
           </button>
 
-
-          <div
-            class="week-title"
-          >
+          <div class="week-title">
 
             <h2>
               ${formatWeekRange(
@@ -1730,7 +1361,6 @@ Papo Com A Pazy Programados até dia`;
 
           </div>
 
-
           <button
             class="nav-button"
             id="next-week"
@@ -1742,24 +1372,15 @@ Papo Com A Pazy Programados até dia`;
 
         </div>
 
-
-        <div
-          class="main-layout"
-        >
+        <div class="main-layout">
 
           <main>
 
-            <div
-              class="week-board"
-            >
+            <div class="week-board">
 
-              <div
-                class="week-scroll"
-              >
+              <div class="week-scroll">
 
-                <div
-                  class="week-grid"
-                >
+                <div class="week-grid">
                   ${renderWeek()}
                 </div>
 
@@ -1767,26 +1388,13 @@ Papo Com A Pazy Programados até dia`;
 
             </div>
 
-
-            <div
-              class="week-summary"
-            >
+            <div class="week-summary">
 
               <strong>
-                ${summary.done}
+                ${summary.done}/${summary.total}
               </strong>
 
               tarefas feitas
-
-              <span
-                style="
-                  color:#999;
-                  margin-left:8px;
-                "
-              >
-                · ${summary.programmed}
-                programadas
-              </span>
 
               <span
                 style="
@@ -1801,13 +1409,11 @@ Papo Com A Pazy Programados até dia`;
 
           </main>
 
-
           ${renderTodayPanel()}
 
         </div>
 
       </div>
-
 
       <!-- NOTES -->
 
@@ -1816,13 +1422,9 @@ Papo Com A Pazy Programados até dia`;
         id="update-modal"
       >
 
-        <div
-          class="modal"
-        >
+        <div class="modal">
 
-          <div
-            class="modal-header"
-          >
+          <div class="modal-header">
 
             <div>
 
@@ -1837,7 +1439,7 @@ Papo Com A Pazy Programados até dia`;
                   font-size:13px;
                 "
               >
-                Seu bloco de notas do planejamento
+                Seu Notes de planejamento
               </p>
 
             </div>
@@ -1852,7 +1454,6 @@ Papo Com A Pazy Programados até dia`;
 
           </div>
 
-
           <textarea
             id="update-text"
             spellcheck="true"
@@ -1860,7 +1461,6 @@ Papo Com A Pazy Programados até dia`;
           >${escapeHTML(
             state.planningNote || ""
           )}</textarea>
-
 
           <p
             style="
@@ -1870,16 +1470,14 @@ Papo Com A Pazy Programados até dia`;
               margin:10px 0 0;
             "
           >
-            Esta nota é salva automaticamente.
-            Quando quiser que uma data de programação
-            atualize o calendário, use linhas como:
-            “Cartinhas programadas até 06/11”.
+            O texto é salvo automaticamente.
+            Para atualizar a programação do calendário,
+            escreva uma linha com o conteúdo e a data,
+            por exemplo:
+            “Cartinhas programadas até 13/11”.
           </p>
 
-
-          <div
-            class="modal-footer"
-          >
+          <div class="modal-footer">
 
             <button
               class="button"
@@ -1894,7 +1492,7 @@ Papo Com A Pazy Programados até dia`;
               id="apply-planning"
               type="button"
             >
-              Aplicar datas ao calendário
+              Aplicar ao calendário
             </button>
 
           </div>
@@ -1913,12 +1511,8 @@ Papo Com A Pazy Programados até dia`;
 
   function bindEvents() {
 
-    /* Semana anterior */
-
     document
-      .getElementById(
-        "previous-week"
-      )
+      .getElementById("previous-week")
       ?.addEventListener(
         "click",
         () => {
@@ -1934,13 +1528,8 @@ Papo Com A Pazy Programados até dia`;
         }
       );
 
-
-    /* Próxima semana */
-
     document
-      .getElementById(
-        "next-week"
-      )
+      .getElementById("next-week")
       ?.addEventListener(
         "click",
         () => {
@@ -1956,13 +1545,8 @@ Papo Com A Pazy Programados até dia`;
         }
       );
 
-
-    /* Voltar para hoje */
-
     document
-      .getElementById(
-        "today-button"
-      )
+      .getElementById("today-button")
       ?.addEventListener(
         "click",
         () => {
@@ -1977,9 +1561,6 @@ Papo Com A Pazy Programados até dia`;
         }
       );
 
-
-    /* Abrir Notes */
-
     document
       .getElementById(
         "update-content-button"
@@ -1989,25 +1570,19 @@ Papo Com A Pazy Programados até dia`;
         openUpdateModal
       );
 
-
-    /* Fechar Notes */
-
     document
-      .getElementById(
-        "close-modal"
-      )
+      .getElementById("close-modal")
       ?.addEventListener(
         "click",
         closeUpdateModal
       );
 
-
-    /* Salvar a nota automaticamente */
+    /*
+     * SALVA O NOTES ENQUANTO VOCÊ DIGITA.
+     */
 
     document
-      .getElementById(
-        "update-text"
-      )
+      .getElementById("update-text")
       ?.addEventListener(
         "input",
         event => {
@@ -2019,13 +1594,8 @@ Papo Com A Pazy Programados até dia`;
         }
       );
 
-
-    /* Salvar nota */
-
     document
-      .getElementById(
-        "save-note"
-      )
+      .getElementById("save-note")
       ?.addEventListener(
         "click",
         () => {
@@ -2039,25 +1609,18 @@ Papo Com A Pazy Programados até dia`;
             textarea?.value || "";
 
           saveState();
-
           closeUpdateModal();
-
-          alert(
-            "Nota salva."
-          );
+          render();
         }
       );
 
-
     /*
-     * Aplicar as datas que aparecem
-     * dentro da nota.
+     * APLICA DATAS DO NOTES
+     * AO PLANEJAMENTO.
      */
 
     document
-      .getElementById(
-        "apply-planning"
-      )
+      .getElementById("apply-planning")
       ?.addEventListener(
         "click",
         () => {
@@ -2074,102 +1637,88 @@ Papo Com A Pazy Programados até dia`;
             text;
 
           const changes =
-            applyPlanningNote(
-              text
-            );
+            applyPlanningNote(text);
 
           saveState();
-
           closeUpdateModal();
-
           render();
 
           alert(
             changes > 0
-              ? `${changes} data(s) de programação atualizada(s).`
-              : "Não encontrei nenhuma linha com conteúdo + data."
+              ? `${changes} programação(ões) atualizada(s).`
+              : "Não encontrei nenhuma linha com conteúdo e data."
           );
         }
       );
 
-
     /*
-     * Checkboxes das tarefas.
+     * CHECKBOXES:
+     * AGORA SÃO 100% MANUAIS.
      */
 
     document
       .querySelectorAll(
         "input[data-task-id]"
       )
-      .forEach(
-        input => {
+      .forEach(input => {
 
-          input.addEventListener(
-            "change",
-            event => {
+        input.addEventListener(
+          "change",
+          event => {
 
-              const id =
-                event.target.dataset.taskId;
+            const id =
+              event.target.dataset.taskId;
 
-              const parts =
-                id.split("__");
+            const parts =
+              id.split("__");
 
-              const dateString =
-                parts.shift();
+            const dateString =
+              parts.shift();
 
-              const platform =
-                parts.shift();
+            const platform =
+              parts.shift();
 
-              const taskName =
-                parts.join("__");
+            const taskName =
+              parts.join("__");
 
-              const date =
-                new Date(
-                  `${dateString}T12:00:00`
-                );
-
-              toggleTask(
-                date,
-                platform,
-                taskName
+            const date =
+              new Date(
+                `${dateString}T12:00:00`
               );
-            }
-          );
 
-        }
-      );
-
+            toggleTask(
+              date,
+              platform,
+              taskName
+            );
+          }
+        );
+      });
 
     /*
-     * Tarefas extras.
+     * TAREFAS EXTRAS
      */
 
     document
       .querySelectorAll(
         "input[data-extra-id]"
       )
-      .forEach(
-        input => {
+      .forEach(input => {
 
-          input.addEventListener(
-            "change",
-            event => {
+        input.addEventListener(
+          "change",
+          event => {
 
-              toggleExtra(
-                getToday(),
-                event.target
-                  .dataset
-                  .extraId
-              );
-            }
-          );
-
-        }
-      );
-
+            toggleExtra(
+              getToday(),
+              event.target.dataset.extraId
+            );
+          }
+        );
+      });
 
     /*
-     * Adicionar tarefa extra.
+     * NOVA TAREFA EXTRA
      */
 
     document
@@ -2185,9 +1734,7 @@ Papo Com A Pazy Programados até dia`;
               "extra-task-input"
             );
 
-          if (!input) {
-            return;
-          }
+          if (!input) return;
 
           addExtra(
             getToday(),
@@ -2196,9 +1743,8 @@ Papo Com A Pazy Programados até dia`;
         }
       );
 
-
     /*
-     * Enter também adiciona tarefa.
+     * ENTER NA TAREFA EXTRA
      */
 
     document
@@ -2229,5 +1775,4 @@ Papo Com A Pazy Programados até dia`;
 
   saveState();
   render();
-
 })();
