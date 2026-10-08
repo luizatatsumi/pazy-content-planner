@@ -1,23 +1,23 @@
 (() => {
   /*
    * PAZY CONTENT PLANNER
-   * Versão definitiva da lógica de checklist.
    *
    * REGRA PRINCIPAL:
    * PROGRAMADO != FEITO
    *
-   * A programação serve apenas para informar se a tarefa
-   * já foi planejada para determinada data.
+   * Programação serve somente para mostrar se aquela tarefa
+   * já foi planejada para a data.
    *
-   * O checkbox é SEMPRE manual.
+   * Checkbox é 100% manual:
+   * clicar = marcar
+   * clicar novamente = desmarcar
    */
 
   const STORAGE_KEY = "pazy-content-planner-v5";
 
   /* =========================================================
-     ROTINA FIXA
+     CRONOGRAMA OFICIAL
      
-     JavaScript:
      0 = domingo
      1 = segunda
      2 = terça
@@ -28,71 +28,134 @@
   ========================================================= */
 
   const ROUTINES = {
-    instagramTikTok: {
-      0: [
-        "Cartinha"
-      ],
-
+    instagram: {
+      0: [],
       1: [
-        "Corte Pazy by Pazy",
+        "Frase do dia",
         "Carrossel",
-        "Frase",
-        "Story Cartinha"
-      ],
-
-      2: [
-        "Corte Pazy by Pazy",
-        "Story Artigo com Link",
-        "Carrossel Artigo",
-        "Story Cartinha"
-      ],
-
-      3: [
-        "Corte Pazy by Pazy",
-        "Frase",
-        "Story Cartinha"
-      ],
-
-      4: [
-        "Story Podcast",
-        "Corte Podcast",
-        "Story Cartinha"
-      ],
-
-      5: [
-        "Story Pazy by Pazy",
-        "Corte Pazy by Pazy",
-        "Story Cartinha"
-      ],
-
-      6: [
+        "Cortes",
         "Cartinha"
-      ]
+      ],
+      2: [
+        "Carrossel do artigo",
+        "Cortes",
+        "Cartinha",
+        "Story do artigo"
+      ],
+      3: [
+        "O que eu diria",
+        "Frase do dia",
+        "Cortes",
+        "Cartinha"
+      ],
+      4: [
+        "Story do novo episódio",
+        "Cortes do episódio",
+        "Cartinha"
+      ],
+      5: [
+        "Story do Pazy by Pazy",
+        "Cortes",
+        "Cartinha"
+      ],
+      6: []
+    },
+
+    tiktok: {
+      0: [],
+      1: [
+        "Frase"
+      ],
+      2: [],
+      3: [
+        "Frase",
+        "O que eu diria"
+      ],
+      4: [
+        "Corte do podcast"
+      ],
+      5: [],
+      6: []
     },
 
     linkedin: {
+      0: [],
       1: [
-        "Post 3000"
+        "Post 3.000 — tema de TI"
       ],
-
       2: [
-        "Artigo"
+        "Newsletter — Atitude de Líder"
       ],
-
       3: [
-        "Post TI"
+        "Post 3.000 — tema de TI"
       ],
-
       4: [
-        "Colocar link (caso tenha vídeo)",
-        "Vídeo Curto Podcast"
+        "Vídeo curto do podcast — só se o convidado é ativo no LinkedIn"
       ],
-
       5: [
-        "Carrossel LinkedIn"
-      ]
+        "Carrossel geral"
+      ],
+      6: []
+    },
+
+    youtube: {
+      0: [],
+      1: [],
+      2: [],
+      3: [],
+      4: [
+        "Vídeo longo — Papo com a Pazy ou Lado B"
+      ],
+      5: [
+        "Pazy by Pazy"
+      ],
+      6: []
+    },
+
+    spotify: {
+      0: [],
+      1: [],
+      2: [],
+      3: [],
+      4: [
+        "Episódio em áudio"
+      ],
+      5: [
+        "Pazy by Pazy em áudio"
+      ],
+      6: []
+    },
+
+    substack: {
+      0: [],
+      1: [],
+      2: [
+        "Artigo longo — o mesmo do LinkedIn"
+      ],
+      3: [],
+      4: [],
+      5: [],
+      6: []
     }
   };
+
+  const PLATFORM_LABELS = {
+    instagram: "Instagram",
+    tiktok: "TikTok",
+    linkedin: "LinkedIn",
+    youtube: "YouTube",
+    spotify: "Spotify",
+    substack: "Substack"
+  };
+
+  const PLATFORM_ORDER = [
+    "instagram",
+    "tiktok",
+    "linkedin",
+    "youtube",
+    "spotify",
+    "substack"
+  ];
 
   /* =========================================================
      PROGRAMAÇÃO INICIAL
@@ -100,30 +163,35 @@
 
   const INITIAL_PROGRAMMED_UNTIL = {
     "Cartinha": "2026-11-06",
+    "Frase do dia": "2026-10-28",
     "Frase": "2026-10-28",
     "Carrossel": "2026-10-26",
-    "Carrossel Artigo": "2026-10-26",
-    "Carrossel LinkedIn": "2026-10-30",
-    "Post TI": "2026-10-28",
-    "Post 3000": "2026-10-26",
+    "Carrossel do artigo": "2026-10-27",
+    "Post 3.000 — tema de TI": "2026-10-28",
+    "Newsletter — Atitude de Líder": "2026-10-27",
+    "Carrossel geral": "2026-10-30",
+    "Cortes": "2026-10-16",
+    "O que eu diria": "2026-10-28",
     "Pazy by Pazy": "2026-10-23",
-    "Corte Pazy by Pazy": "2026-10-16"
+    "Story do Pazy by Pazy": "2026-10-23",
+    "Corte do podcast": "2026-10-16",
+    "Cortes do episódio": "2026-10-16",
+    "Artigo longo — o mesmo do LinkedIn": "2026-10-27"
   };
 
   const INITIAL_NOTE = `Conteúdos Pazy Outubro
 
 Cartinhas programadas até dia 06/11
 Frases programadas até dia 28/10
-Carrosséis Insta programadas até dia 26/10
-O que eu diria programados até dia 28/10
+Carrosséis Insta programados até dia 26/10
 Carrosséis LinkedIn programados até dia 30/10
-Olho no Olho programados até dia 26/10
-Post TI programadas até dia 28/10
-Post 3000 programados até dia 26/10
-Carrossel Substack programado até dia 27/10
-Pazy by Pazy programados até dia 23/10
-Cortes Pazy by Pazy 16/10
-Papo Com A Pazy Programados até dia`;
+Post 3.000 programado até dia 28/10
+Newsletter programada até dia 27/10
+Cortes programados até dia 16/10
+O que eu diria programado até dia 28/10
+Pazy by Pazy programado até dia 23/10
+
+Papo Com A Pazy`;
 
   /* =========================================================
      ESTADO
@@ -132,32 +200,7 @@ Papo Com A Pazy Programados até dia`;
   const state = loadState();
 
   function loadState() {
-    /*
-     * Sempre começa sem marcações antigas.
-     *
-     * Isso resolve o problema de coisas que estavam marcadas
-     * nas versões anteriores do sistema.
-     */
-
-    const defaultState = {
-      currentWeek: getMonday(new Date()),
-
-      // SOMENTE marcações manuais.
-      manualDone: {},
-
-      extras: {},
-
-      programmedUntil: {
-        ...INITIAL_PROGRAMMED_UNTIL
-      },
-
-      planningNote: INITIAL_NOTE
-    };
-
     try {
-      /*
-       * Primeiro tenta carregar a nova versão.
-       */
       const current = JSON.parse(
         localStorage.getItem(STORAGE_KEY) || "null"
       );
@@ -168,7 +211,9 @@ Papo Com A Pazy Programados até dia`;
             ? new Date(`${current.currentWeek}T12:00:00`)
             : getMonday(new Date()),
 
-          manualDone: current.manualDone || {},
+          manualDone: migrateManualDone(
+            current.manualDone || {}
+          ),
 
           extras: current.extras || {},
 
@@ -182,43 +227,63 @@ Papo Com A Pazy Programados até dia`;
         };
       }
 
-      /*
-       * Aproveita as informações das versões antigas,
-       * mas NÃO aproveita as antigas marcações.
-       */
-      const old = JSON.parse(
-        localStorage.getItem(
-          "pazy-content-planner-v4"
-        ) || "null"
-      );
-
-      if (old) {
-        return {
-          currentWeek: old.currentWeek
-            ? new Date(`${old.currentWeek}T12:00:00`)
-            : getMonday(new Date()),
-
-          // IMPORTANTE:
-          // começamos zerado.
-          manualDone: {},
-
-          extras: old.extras || {},
-
-          programmedUntil: {
-            ...INITIAL_PROGRAMMED_UNTIL,
-            ...(old.programmedUntil || {})
-          },
-
-          planningNote:
-            old.planningNote || INITIAL_NOTE
-        };
-      }
-
-      return defaultState;
+      return {
+        currentWeek: getMonday(new Date()),
+        manualDone: {},
+        extras: {},
+        programmedUntil: {
+          ...INITIAL_PROGRAMMED_UNTIL
+        },
+        planningNote: INITIAL_NOTE
+      };
 
     } catch {
-      return defaultState;
+      return {
+        currentWeek: getMonday(new Date()),
+        manualDone: {},
+        extras: {},
+        programmedUntil: {
+          ...INITIAL_PROGRAMMED_UNTIL
+        },
+        planningNote: INITIAL_NOTE
+      };
     }
+  }
+
+  /*
+   * Mantém marcações antigas quando possível.
+   *
+   * Versões antigas usavam:
+   * DATA__PLATAFORMA__TAREFA
+   *
+   * Agora usamos:
+   * DATA__TAREFA
+   */
+  function migrateManualDone(oldData) {
+    const result = {};
+
+    Object.entries(oldData).forEach(
+      ([oldId, value]) => {
+        if (!value) return;
+
+        const parts = oldId.split("__");
+
+        if (parts.length >= 3) {
+          const date = parts.shift();
+          parts.shift();
+
+          const task = parts.join("__");
+
+          result[
+            `${date}__${task}`
+          ] = true;
+        } else {
+          result[oldId] = true;
+        }
+      }
+    );
+
+    return result;
   }
 
   function saveState() {
@@ -323,9 +388,7 @@ Papo Com A Pazy Programados até dia`;
     const end =
       addDays(start, 6);
 
-    return (
-      `${formatBR(start)} — ${formatBR(end)}`
-    );
+    return `${formatBR(start)} — ${formatBR(end)}`;
   }
 
   function isToday(date) {
@@ -375,178 +438,95 @@ Papo Com A Pazy Programados até dia`;
   }
 
   /* =========================================================
-     LIGAÇÃO ENTRE TAREFA E PROGRAMAÇÃO
+     PROGRAMAÇÃO
   ========================================================= */
 
   function getPlanningKey(taskName) {
     const normalized =
       normalizeText(taskName);
 
-    /*
-     * CARTINHA
-     */
-    if (
-      normalized === "cartinha" ||
-      normalized === "story cartinha"
-    ) {
-      return "Cartinha";
-    }
+    const directAliases = {
+      "cartinha": "Cartinha",
 
-    /*
-     * FRASES
-     */
-    if (
-      normalized === "frase" ||
-      normalized === "frases"
-    ) {
-      return "Frase";
-    }
+      "frase do dia":
+        "Frase do dia",
 
-    /*
-     * CARROSSÉIS
-     */
-    if (
-      normalized === "carrossel"
-    ) {
-      return "Carrossel";
-    }
+      "frase":
+        "Frase",
 
-    if (
-      normalized ===
-      "carrossel artigo"
-    ) {
-      return "Carrossel Artigo";
-    }
+      "carrossel":
+        "Carrossel",
 
-    if (
-      normalized ===
-      "carrossel linkedin"
-    ) {
-      return "Carrossel LinkedIn";
-    }
+      "carrossel do artigo":
+        "Carrossel do artigo",
 
-    /*
-     * ARTIGO
-     */
-    if (
-      normalized ===
-      "artigo" ||
-      normalized ===
-      "story artigo com link"
-    ) {
-      return "Artigo";
-    }
+      "cortes":
+        "Cortes",
 
-    /*
-     * PAZY
-     */
-    if (
-      normalized ===
-      "pazy by pazy" ||
-      normalized ===
-      "story pazy by pazy"
-    ) {
-      return "Pazy by Pazy";
-    }
+      "o que eu diria":
+        "O que eu diria",
 
-    if (
-      normalized ===
-      "corte pazy by pazy"
-    ) {
-      return "Corte Pazy by Pazy";
-    }
+      "post 3.000 — tema de ti":
+        "Post 3.000 — tema de TI",
 
-    /*
-     * LINKEDIN
-     */
-    if (
-      normalized ===
-      "post ti"
-    ) {
-      return "Post TI";
-    }
+      "post 3000 — tema de ti":
+        "Post 3.000 — tema de TI",
 
-    if (
-      normalized ===
-      "post 3000"
-    ) {
-      return "Post 3000";
-    }
+      "newsletter — atitude de lider":
+        "Newsletter — Atitude de Líder",
 
-    /*
-     * PODCAST
-     */
-    if (
-      normalized ===
-      "story podcast"
-    ) {
-      return "Story Podcast";
-    }
+      "newsletter":
+        "Newsletter — Atitude de Líder",
 
-    if (
-      normalized ===
-      "corte podcast"
-    ) {
-      return "Corte Podcast";
-    }
+      "carrossel geral":
+        "Carrossel geral",
 
-    if (
-      normalized.includes(
-        "video curto podcast"
-      )
-    ) {
-      return "Vídeo Curto Podcast";
-    }
+      "pazy by pazy":
+        "Pazy by Pazy",
 
-    if (
-      normalized.includes(
-        "colocar link"
-      )
-    ) {
-      return "Colocar link (caso tenha vídeo)";
-    }
+      "story do pazy by pazy":
+        "Story do Pazy by Pazy",
 
-    /*
-     * OUTROS
-     */
-    if (
-      normalized ===
-      "o que eu diria"
-    ) {
-      return "O que eu diria";
-    }
+      "corte do podcast":
+        "Corte do podcast",
 
-    if (
-      normalized ===
-      "olho no olho"
-    ) {
-      return "Olho no Olho";
-    }
+      "cortes do episodio":
+        "Cortes do episódio",
 
-    if (
-      normalized ===
-      "carrossel substack"
-    ) {
-      return "Carrossel Substack";
-    }
+      "cortes do episódio":
+        "Cortes do episódio",
 
-    if (
-      normalized ===
-      "papo com a pazy"
-    ) {
-      return "Papo Com A Pazy";
-    }
+      "story do novo episodio":
+        "Story do novo episódio",
 
-    return taskName;
-  }
+      "story do novo episódio":
+        "Story do novo episódio",
 
-  function getProgrammedUntil(taskName) {
-    const key =
-      getPlanningKey(taskName);
+      "story do artigo":
+        "Story do artigo",
+
+      "artigo longo":
+        "Artigo longo — o mesmo do LinkedIn",
+
+      "artigo longo — o mesmo do linkedin":
+        "Artigo longo — o mesmo do LinkedIn",
+
+      "episodio em audio":
+        "Episódio em áudio",
+
+      "episódio em áudio":
+        "Episódio em áudio",
+
+      "pazy by pazy em audio":
+        "Pazy by Pazy em áudio",
+
+      "pazy by pazy em áudio":
+        "Pazy by Pazy em áudio"
+    };
 
     return (
-      state.programmedUntil[key] ||
-      null
+      directAliases[normalized] ||
+      taskName
     );
   }
 
@@ -554,10 +534,11 @@ Papo Com A Pazy Programados até dia`;
     taskName,
     date
   ) {
+    const key =
+      getPlanningKey(taskName);
+
     const limit =
-      getProgrammedUntil(
-        taskName
-      );
+      state.programmedUntil[key];
 
     if (!limit) {
       return false;
@@ -569,31 +550,27 @@ Papo Com A Pazy Programados até dia`;
   }
 
   /* =========================================================
-     CHECKBOX — 100% MANUAL
+     CHECKLIST MANUAL
   ========================================================= */
 
   function getTaskId(
     date,
-    platform,
     taskName
   ) {
     return [
       formatDate(date),
-      platform,
       normalizeText(taskName)
     ].join("__");
   }
 
   function isDone(
     date,
-    platform,
     taskName
   ) {
     return Boolean(
       state.manualDone[
         getTaskId(
           date,
-          platform,
           taskName
         )
       ]
@@ -602,24 +579,16 @@ Papo Com A Pazy Programados até dia`;
 
   function toggleTask(
     date,
-    platform,
     taskName
   ) {
     const id =
       getTaskId(
         date,
-        platform,
         taskName
       );
 
     /*
-     * Clique 1:
-     * marca.
-     *
-     * Clique 2:
-     * desmarca.
-     *
-     * SEMPRE.
+     * 100% MANUAL.
      *
      * Programação não interfere.
      */
@@ -657,9 +626,7 @@ Papo Com A Pazy Programados até dia`;
       String(text || "")
         .trim();
 
-    if (!clean) {
-      return;
-    }
+    if (!clean) return;
 
     const key =
       formatDate(date);
@@ -704,9 +671,7 @@ Papo Com A Pazy Programados até dia`;
           extra.id === id
       );
 
-    if (!item) {
-      return;
-    }
+    if (!item) return;
 
     item.completed =
       !item.completed;
@@ -720,40 +685,34 @@ Papo Com A Pazy Programados até dia`;
      TAREFAS DO DIA
   ========================================================= */
 
-  function getTasksForDay(
-    date
-  ) {
+  function getTasksForDay(date) {
     const weekday =
       date.getDay();
 
-    return {
-      instagramTikTok:
-        ROUTINES
-          .instagramTikTok[
-            weekday
-          ] || [],
+    const result = {};
 
-      linkedin:
-        ROUTINES
-          .linkedin[
-            weekday
-          ] || []
-    };
+    PLATFORM_ORDER.forEach(
+      platform => {
+        result[platform] =
+          ROUTINES[platform][weekday] ||
+          [];
+      }
+    );
+
+    return result;
   }
 
   /* =========================================================
-     VISUAL DE UMA TAREFA
+     RENDER DE TAREFA
   ========================================================= */
 
   function buildTaskHTML(
     date,
-    platform,
     taskName
   ) {
     const done =
       isDone(
         date,
-        platform,
         taskName
       );
 
@@ -778,7 +737,6 @@ Papo Com A Pazy Programados até dia`;
           data-task-id="${escapeHTML(
             getTaskId(
               date,
-              platform,
               taskName
             )
           )}"
@@ -833,9 +791,7 @@ Papo Com A Pazy Programados até dia`;
      COLUNA DO DIA
   ========================================================= */
 
-  function renderDay(
-    date
-  ) {
+  function renderDay(date) {
     const tasks =
       getTasksForDay(date);
 
@@ -845,36 +801,37 @@ Papo Com A Pazy Programados até dia`;
     let total = 0;
     let done = 0;
 
-    Object.entries(tasks)
-      .forEach(
-        ([platform, list]) => {
+    PLATFORM_ORDER.forEach(
+      platform => {
 
-          list.forEach(
-            task => {
+        const list =
+          tasks[platform] || [];
 
-              total++;
+        list.forEach(
+          task => {
 
-              if (
-                isDone(
-                  date,
-                  platform,
-                  task
-                )
-              ) {
-                done++;
-              }
+            total++;
 
+            if (
+              isDone(
+                date,
+                task
+              )
+            ) {
+              done++;
             }
-          );
 
-        }
-      );
+          }
+        );
+      }
+    );
 
     const percentage =
       total === 0
         ? 0
         : Math.round(
-            (done / total) * 100
+            (done / total) *
+            100
           );
 
     return `
@@ -927,81 +884,10 @@ Papo Com A Pazy Programados até dia`;
           class="day-content"
         >
 
-          <div
-            class="platform-section"
-          >
-
-            <h3
-              class="platform-title"
-            >
-              Instagram / TikTok
-            </h3>
-
-            <div
-              class="task-list"
-            >
-
-              ${
-                tasks
-                  .instagramTikTok
-                  .map(
-                    task =>
-                      buildTaskHTML(
-                        date,
-                        "instagramTikTok",
-                        task
-                      )
-                  )
-                  .join("")
-              }
-
-            </div>
-
-          </div>
-
-
-          <div
-            class="platform-section"
-          >
-
-            <h3
-              class="platform-title"
-            >
-              LinkedIn
-            </h3>
-
-            <div
-              class="task-list"
-            >
-
-              ${
-                tasks.linkedin.length
-                  ? tasks
-                      .linkedin
-                      .map(
-                        task =>
-                          buildTaskHTML(
-                            date,
-                            "linkedin",
-                            task
-                          )
-                      )
-                      .join("")
-                  : `
-                    <span
-                      style="
-                        color:#999;
-                        font-size:12px;
-                      "
-                    >
-                      —
-                    </span>
-                  `
-              }
-
-            </div>
-
-          </div>
+          ${renderPlatformSections(
+            date,
+            tasks
+          )}
 
 
           <div
@@ -1013,8 +899,7 @@ Papo Com A Pazy Programados até dia`;
             >
 
               <span>
-                ${done}/${total}
-                feitas
+                ${done}/${total} feitas
               </span>
 
               <span>
@@ -1042,6 +927,59 @@ Papo Com A Pazy Programados até dia`;
 
       </section>
     `;
+  }
+
+  function renderPlatformSections(
+    date,
+    tasks
+  ) {
+    let html = "";
+
+    PLATFORM_ORDER.forEach(
+      platform => {
+
+        const list =
+          tasks[platform] || [];
+
+        if (!list.length) {
+          return;
+        }
+
+        html += `
+          <div
+            class="platform-section"
+          >
+
+            <h3
+              class="platform-title"
+            >
+              ${PLATFORM_LABELS[
+                platform
+              ]}
+            </h3>
+
+            <div
+              class="task-list"
+            >
+
+              ${list
+                .map(
+                  task =>
+                    buildTaskHTML(
+                      date,
+                      task
+                    )
+                )
+                .join("")}
+
+            </div>
+
+          </div>
+        `;
+      }
+    );
+
+    return html;
   }
 
   function renderWeek() {
@@ -1094,75 +1032,17 @@ Papo Com A Pazy Programados até dia`;
           class="today-panel-date"
         >
           ${escapeHTML(
-            formatLongDate(today)
+            formatLongDate(
+              today
+            )
           )}
         </p>
 
 
-        <section
-          class="today-section"
-        >
-
-          <h4
-            class="today-section-title"
-          >
-            Instagram / TikTok
-          </h4>
-
-          <div
-            class="task-list"
-          >
-
-            ${
-              tasks
-                .instagramTikTok
-                .map(
-                  task =>
-                    buildTaskHTML(
-                      today,
-                      "instagramTikTok",
-                      task
-                    )
-                )
-                .join("")
-            }
-
-          </div>
-
-        </section>
-
-
-        <section
-          class="today-section"
-        >
-
-          <h4
-            class="today-section-title"
-          >
-            LinkedIn
-          </h4>
-
-          <div
-            class="task-list"
-          >
-
-            ${
-              tasks
-                .linkedin
-                .map(
-                  task =>
-                    buildTaskHTML(
-                      today,
-                      "linkedin",
-                      task
-                    )
-                )
-                .join("")
-            }
-
-          </div>
-
-        </section>
+        ${renderTodayPlatforms(
+          today,
+          tasks
+        )}
 
 
         <section
@@ -1270,7 +1150,8 @@ Papo Com A Pazy Programados até dia`;
             class="task-list"
           >
             ${renderUnplannedToday(
-              tasks
+              tasks,
+              today
             )}
           </div>
 
@@ -1280,37 +1161,90 @@ Papo Com A Pazy Programados até dia`;
     `;
   }
 
-  function renderUnplannedToday(
+  function renderTodayPlatforms(
+    date,
     tasks
+  ) {
+    let html = "";
+
+    PLATFORM_ORDER.forEach(
+      platform => {
+
+        const list =
+          tasks[platform] || [];
+
+        if (!list.length) {
+          return;
+        }
+
+        html += `
+          <section
+            class="today-section"
+          >
+
+            <h4
+              class="today-section-title"
+            >
+              ${PLATFORM_LABELS[
+                platform
+              ]}
+            </h4>
+
+            <div
+              class="task-list"
+            >
+
+              ${list
+                .map(
+                  task =>
+                    buildTaskHTML(
+                      date,
+                      task
+                    )
+                )
+                .join("")}
+
+            </div>
+
+          </section>
+        `;
+      }
+    );
+
+    return html;
+  }
+
+  function renderUnplannedToday(
+    tasks,
+    date
   ) {
     const list = [];
 
-    Object.entries(tasks)
-      .forEach(
-        ([platform, taskList]) => {
+    PLATFORM_ORDER.forEach(
+      platform => {
 
-          taskList.forEach(
-            task => {
+        const taskList =
+          tasks[platform] || [];
 
-              if (
-                !isProgrammed(
-                  task,
-                  getToday()
-                )
-              ) {
+        taskList.forEach(
+          task => {
 
-                list.push({
-                  platform,
-                  task
-                });
-
-              }
-
+            if (
+              !isProgrammed(
+                task,
+                date
+              )
+            ) {
+              list.push({
+                platform,
+                task
+              });
             }
-          );
 
-        }
-      );
+          }
+        );
+      }
+    );
 
     if (!list.length) {
       return `
@@ -1332,8 +1266,7 @@ Papo Com A Pazy Programados até dia`;
 
           const done =
             isDone(
-              getToday(),
-              item.platform,
+              date,
               item.task
             );
 
@@ -1362,8 +1295,6 @@ Papo Com A Pazy Programados até dia`;
 
   /* =========================================================
      RESUMO
-     
-     SOMENTE O QUE FOI MARCADO MANUALMENTE
   ========================================================= */
 
   function getWeekSummary() {
@@ -1387,37 +1318,39 @@ Papo Com A Pazy Programados até dia`;
           date
         );
 
-      Object.entries(tasks)
-        .forEach(
-          ([platform, list]) => {
+      PLATFORM_ORDER.forEach(
+        platform => {
 
-            list.forEach(
-              task => {
+          const list =
+            tasks[platform] ||
+            [];
 
-                total++;
+          list.forEach(
+            task => {
 
-                if (
-                  isDone(
-                    date,
-                    platform,
-                    task
-                  )
-                ) {
-                  done++;
-                }
+              total++;
 
+              if (
+                isDone(
+                  date,
+                  task
+                )
+              ) {
+                done++;
               }
-            );
 
-          }
-        );
+            }
+          );
+        }
+      );
     }
 
     const percentage =
       total === 0
         ? 0
         : Math.round(
-            (done / total) * 100
+            (done / total) *
+            100
           );
 
     return {
@@ -1474,7 +1407,7 @@ Papo Com A Pazy Programados até dia`;
         "carrossel linkedin"
       )
     ) {
-      return "Carrossel LinkedIn";
+      return "Carrossel geral";
     }
 
     if (
@@ -1483,9 +1416,6 @@ Papo Com A Pazy Programados até dia`;
       ) ||
       normalized.includes(
         "carrossel insta"
-      ) ||
-      normalized.includes(
-        "carrosseis instagram"
       )
     ) {
       return "Carrossel";
@@ -1493,18 +1423,18 @@ Papo Com A Pazy Programados até dia`;
 
     if (
       normalized.includes(
-        "carrossel artigo"
+        "carrossel do artigo"
       )
     ) {
-      return "Carrossel Artigo";
+      return "Carrossel do artigo";
     }
 
     if (
       normalized.includes(
-        "carrossel substack"
+        "carrossel"
       )
     ) {
-      return "Carrossel Substack";
+      return "Carrossel";
     }
 
     if (
@@ -1517,59 +1447,35 @@ Papo Com A Pazy Programados até dia`;
 
     if (
       normalized.includes(
-        "frase"
+        "frase do dia"
       )
+    ) {
+      return "Frase do dia";
+    }
+
+    if (
+      normalized === "frase"
     ) {
       return "Frase";
     }
 
     if (
       normalized.includes(
-        "post ti"
-      )
-    ) {
-      return "Post TI";
-    }
-
-    if (
+        "post 3.000"
+      ) ||
       normalized.includes(
         "post 3000"
       )
     ) {
-      return "Post 3000";
+      return "Post 3.000 — tema de TI";
     }
 
     if (
       normalized.includes(
-        "cortes pazy by pazy"
-      ) ||
-      normalized.includes(
-        "corte pazy by pazy"
+        "newsletter"
       )
     ) {
-      return "Corte Pazy by Pazy";
-    }
-
-    /*
-     * IMPORTANTE:
-     * "Cortes Pazy by Pazy" precisa ser testado
-     * antes de "Pazy by Pazy".
-     */
-
-    if (
-      normalized.includes(
-        "pazy by pazy"
-      )
-    ) {
-      return "Pazy by Pazy";
-    }
-
-    if (
-      normalized.includes(
-        "olho no olho"
-      )
-    ) {
-      return "Olho no Olho";
+      return "Newsletter — Atitude de Líder";
     }
 
     if (
@@ -1581,53 +1487,73 @@ Papo Com A Pazy Programados até dia`;
     }
 
     if (
-      normalized.includes(
-        "papo com a pazy"
-      )
+      normalized === "cortes"
     ) {
-      return "Papo Com A Pazy";
+      return "Cortes";
     }
 
     if (
       normalized.includes(
-        "story podcast"
+        "pazy by pazy em audio"
       )
     ) {
-      return "Story Podcast";
+      return "Pazy by Pazy em áudio";
     }
 
     if (
       normalized.includes(
-        "corte podcast"
+        "pazy by pazy"
       )
     ) {
-      return "Corte Podcast";
+      return "Pazy by Pazy";
     }
 
     if (
       normalized.includes(
-        "video curto podcast"
+        "corte do podcast"
       )
     ) {
-      return "Vídeo Curto Podcast";
+      return "Corte do podcast";
     }
 
     if (
       normalized.includes(
-        "colocar link"
+        "cortes do episodio"
       )
     ) {
-      return "Colocar link (caso tenha vídeo)";
+      return "Cortes do episódio";
     }
 
     if (
-      normalized ===
-        "artigo" ||
-      normalized.startsWith(
-        "artigo "
+      normalized.includes(
+        "story do novo episodio"
       )
     ) {
-      return "Artigo";
+      return "Story do novo episódio";
+    }
+
+    if (
+      normalized.includes(
+        "story do artigo"
+      )
+    ) {
+      return "Story do artigo";
+    }
+
+    if (
+      normalized.includes(
+        "artigo longo"
+      )
+    ) {
+      return "Artigo longo — o mesmo do LinkedIn";
+    }
+
+    if (
+      normalized.includes(
+        "episodio em audio"
+      )
+    ) {
+      return "Episódio em áudio";
     }
 
     return null;
@@ -1652,12 +1578,12 @@ Papo Com A Pazy Programados até dia`;
         const normalized =
           normalizeText(line);
 
-        const planningKey =
+        const key =
           detectPlanningKey(
             normalized
           );
 
-        if (!planningKey) {
+        if (!key) {
           return;
         }
 
@@ -1681,7 +1607,7 @@ Papo Com A Pazy Programados até dia`;
             ? Number(match[3])
             : 2026;
 
-        const isoDate =
+        const date =
           `${year}-${String(
             month
           ).padStart(
@@ -1695,11 +1621,10 @@ Papo Com A Pazy Programados até dia`;
           )}`;
 
         state.programmedUntil[
-          planningKey
-        ] = isoDate;
+          key
+        ] = date;
 
         changes++;
-
       }
     );
 
@@ -1939,10 +1864,8 @@ Papo Com A Pazy Programados até dia`;
             "
           >
             O Notes salva automaticamente.
-            Quando quiser atualizar o planejamento,
-            escreva o conteúdo e a data.
-            Exemplo:
-            “Cartinhas programadas até 13/11”.
+            Linhas com conteúdo + data podem
+            atualizar a programação.
           </p>
 
 
@@ -1982,10 +1905,6 @@ Papo Com A Pazy Programados até dia`;
 
   function bindEvents() {
 
-    /*
-     * SEMANA ANTERIOR
-     */
-
     document
       .getElementById(
         "previous-week"
@@ -2006,10 +1925,6 @@ Papo Com A Pazy Programados até dia`;
         }
       );
 
-
-    /*
-     * PRÓXIMA SEMANA
-     */
 
     document
       .getElementById(
@@ -2032,10 +1947,6 @@ Papo Com A Pazy Programados até dia`;
       );
 
 
-    /*
-     * HOJE
-     */
-
     document
       .getElementById(
         "today-button"
@@ -2056,10 +1967,6 @@ Papo Com A Pazy Programados até dia`;
       );
 
 
-    /*
-     * ABRIR NOTES
-     */
-
     document
       .getElementById(
         "update-content-button"
@@ -2069,10 +1976,6 @@ Papo Com A Pazy Programados até dia`;
         openUpdateModal
       );
 
-
-    /*
-     * FECHAR NOTES
-     */
 
     document
       .getElementById(
@@ -2085,7 +1988,7 @@ Papo Com A Pazy Programados até dia`;
 
 
     /*
-     * SALVAR NOTES AUTOMATICAMENTE
+     * NOTES salva enquanto você digita.
      */
 
     document
@@ -2105,7 +2008,7 @@ Papo Com A Pazy Programados até dia`;
 
 
     /*
-     * SALVAR NOTES
+     * Salvar Notes
      */
 
     document
@@ -2134,7 +2037,7 @@ Papo Com A Pazy Programados até dia`;
 
 
     /*
-     * APLICAR PLANEJAMENTO
+     * Aplicar datas ao calendário
      */
 
     document
@@ -2167,31 +2070,19 @@ Papo Com A Pazy Programados até dia`;
 
           render();
 
-          if (changes > 0) {
-
-            alert(
-              `${changes} programação(ões) atualizada(s).`
-            );
-
-          } else {
-
-            alert(
-              "Não encontrei nenhuma linha com conteúdo e data."
-            );
-
-          }
-
+          alert(
+            changes > 0
+              ? `${changes} programação(ões) atualizada(s).`
+              : "Não encontrei nenhuma linha com conteúdo e data."
+          );
         }
       );
 
 
     /*
-     * CHECKBOXES
+     * CHECKBOXES.
      *
-     * TODAS MANUAIS.
-     *
-     * Clicar marca.
-     * Clicar novamente desmarca.
+     * 100% MANUAIS.
      */
 
     document
@@ -2218,9 +2109,6 @@ Papo Com A Pazy Programados até dia`;
               const dateString =
                 parts.shift();
 
-              const platform =
-                parts.shift();
-
               const taskName =
                 parts.join(
                   "__"
@@ -2233,10 +2121,8 @@ Papo Com A Pazy Programados até dia`;
 
               toggleTask(
                 date,
-                platform,
                 taskName
               );
-
             }
           );
 
@@ -2265,7 +2151,6 @@ Papo Com A Pazy Programados até dia`;
                   .dataset
                   .extraId
               );
-
             }
           );
 
@@ -2274,7 +2159,7 @@ Papo Com A Pazy Programados até dia`;
 
 
     /*
-     * NOVA TAREFA EXTRA
+     * Nova tarefa extra
      */
 
     document
@@ -2290,21 +2175,18 @@ Papo Com A Pazy Programados até dia`;
               "extra-task-input"
             );
 
-          if (!input) {
-            return;
-          }
+          if (!input) return;
 
           addExtra(
             getToday(),
             input.value
           );
-
         }
       );
 
 
     /*
-     * ENTER NA TAREFA EXTRA
+     * Enter na tarefa extra
      */
 
     document
@@ -2325,13 +2207,12 @@ Papo Com A Pazy Programados até dia`;
             getToday(),
             event.target.value
           );
-
         }
       );
   }
 
   /* =========================================================
-     INICIALIZAÇÃO
+     INÍCIO
   ========================================================= */
 
   saveState();
