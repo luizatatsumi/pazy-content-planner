@@ -80,13 +80,13 @@
     linkedin: {
       0: [],
       1: [
-        "Post 3.000 — tema de TI"
+        "Post 3.000"
       ],
       2: [
         "Newsletter — Atitude de Líder"
       ],
       3: [
-        "Post 3.000 — tema de TI"
+        "Post tema de TI"
       ],
       4: [
         "Vídeo curto do podcast — só se o convidado é ativo no LinkedIn"
@@ -168,7 +168,8 @@
     "Frase": "2026-10-28",
     "Carrossel": "2026-10-26",
     "Carrossel do artigo": "2026-10-27",
-    "Post 3.000 — tema de TI": "2026-10-28",
+    "Post 3.000": "2026-10-28",
+    "Post tema de TI": "2026-10-28",
     "Newsletter — Atitude de Líder": "2026-10-27",
     "Carrossel geral": "2026-10-30",
     "Cortes": "2026-10-16",
@@ -481,11 +482,12 @@ Papo Com A Pazy`;
       "corte do pazy by pazy":
         "Corte do Pazy by Pazy",
 
-      "post 3.000 — tema de ti":
-        "Post 3.000 — tema de TI",
+      "post 3.000 — tema de ti": "Post 3.000",
+      "post 3.000": "Post 3.000",
+      "post tema de ti": "Post tema de TI",
 
-      "post 3000 — tema de ti":
-        "Post 3.000 — tema de TI",
+      "post 3000 — tema de ti": "Post 3.000",
+      "post 3000": "Post 3.000",
 
       "newsletter — atitude de lider":
         "Newsletter — Atitude de Líder",
@@ -1437,16 +1439,8 @@ Papo Com A Pazy`;
       return "Frase";
     }
 
-    if (
-      normalized.includes(
-        "post 3.000"
-      ) ||
-      normalized.includes(
-        "post 3000"
-      )
-    ) {
-      return "Post 3.000 — tema de TI";
-    }
+    if (normalized.includes("post tema de ti") || normalized.includes("posts ti") || normalized.includes("post ti")) return "Post tema de TI";
+    if (normalized.includes("post 3.000") || normalized.includes("post 3000") || normalized.includes("posts 3000")) return "Post 3.000";
 
     if (
       normalized.includes(
