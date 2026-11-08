@@ -33,19 +33,18 @@
       1: [
         "Frase do dia",
         "Carrossel",
-        "Cortes",
+        "Reels antigos",
         "Cartinha"
       ],
       2: [
         "Carrossel do artigo",
-        "Cortes",
+        "Reels antigos",
         "Cartinha",
         "Story do artigo"
       ],
       3: [
         "O que eu diria",
         "Frase do dia",
-        "Cortes",
         "Cartinha"
       ],
       4: [
@@ -55,7 +54,7 @@
       ],
       5: [
         "Story do Pazy by Pazy",
-        "Cortes",
+        "Corte do Pazy by Pazy",
         "Cartinha"
       ],
       6: []
@@ -102,7 +101,9 @@
       0: [],
       1: [],
       2: [],
-      3: [],
+      3: [
+        "O que eu diria / Olho no Olho"
+      ],
       4: [
         "Vídeo longo — Papo com a Pazy ou Lado B"
       ],
@@ -171,6 +172,8 @@
     "Newsletter — Atitude de Líder": "2026-10-27",
     "Carrossel geral": "2026-10-30",
     "Cortes": "2026-10-16",
+    "Reels antigos": "2026-10-16",
+    "Corte do Pazy by Pazy": "2026-10-16",
     "O que eu diria": "2026-10-28",
     "Pazy by Pazy": "2026-10-23",
     "Story do Pazy by Pazy": "2026-10-23",
@@ -465,6 +468,15 @@ Papo Com A Pazy`;
 
       "o que eu diria":
         "O que eu diria",
+
+      "o que eu diria / olho no olho":
+        "O que eu diria",
+
+      "reels antigos":
+        "Reels antigos",
+
+      "corte do pazy by pazy":
+        "Corte do Pazy by Pazy",
 
       "post 3.000 — tema de ti":
         "Post 3.000 — tema de TI",
@@ -1476,6 +1488,22 @@ Papo Com A Pazy`;
       )
     ) {
       return "Newsletter — Atitude de Líder";
+    }
+
+    if (
+      normalized.includes(
+        "reels antigos"
+      )
+    ) {
+      return "Reels antigos";
+    }
+
+    if (
+      normalized.includes(
+        "corte do pazy by pazy"
+      )
+    ) {
+      return "Corte do Pazy by Pazy";
     }
 
     if (
