@@ -214,6 +214,7 @@ Papo Com A Pazy`;
             ? new Date(`${current.currentWeek}T12:00:00`)
             : getMonday(new Date()),
 
+          automationDates: current.automationDates || {},
           manualDone: migrateManualDone(
             current.manualDone || {}
           ),
@@ -232,6 +233,7 @@ Papo Com A Pazy`;
 
       return {
         currentWeek: getMonday(new Date()),
+        automationDates: {},
         manualDone: {},
         extras: {},
         programmedUntil: {
@@ -299,6 +301,7 @@ Papo Com A Pazy`;
 
         manualDone:
           state.manualDone,
+        automationDates: state.automationDates || {},
 
         extras:
           state.extras,
@@ -579,14 +582,11 @@ Papo Com A Pazy`;
     date,
     taskName
   ) {
-    return Boolean(
-      state.manualDone[
-        getTaskId(
-          date,
-          taskName
-        )
-      ]
-    );
+    const id = getTaskId(date, taskName);
+    if (Object.prototype.hasOwnProperty.call(state.manualDone, id)) return Boolean(state.manualDone[id]);
+    const key = getPlanningKey(taskName);
+    const limit = (state.automationDates || {})[key];
+    return Boolean(limit && formatDate(date) <= limit);
   }
 
   function toggleTask(
@@ -605,13 +605,7 @@ Papo Com A Pazy`;
      * Programação não interfere.
      */
 
-    if (
-      state.manualDone[id]
-    ) {
-      delete state.manualDone[id];
-    } else {
-      state.manualDone[id] = true;
-    }
+    state.manualDone[id] = !isDone(date, taskName);
 
     saveState();
 
@@ -728,12 +722,6 @@ Papo Com A Pazy`;
         taskName
       );
 
-    const programmed =
-      isProgrammed(
-        taskName,
-        date
-      );
-
     return `
       <label
         class="task ${
@@ -765,33 +753,7 @@ Papo Com A Pazy`;
             taskName
           )}
 
-          ${
-            programmed
-              ? `
-                <span
-                  style="
-                    font-size:10px;
-                    color:#999;
-                    margin-left:5px;
-                    white-space:nowrap;
-                  "
-                >
-                  programado
-                </span>
-              `
-              : `
-                <span
-                  style="
-                    font-size:11px;
-                    color:#a76500;
-                    margin-left:5px;
-                  "
-                  title="Ainda não informado como programado"
-                >
-                  ⚠
-                </span>
-              `
-          }
+
 
         </span>
 
@@ -1155,7 +1117,7 @@ Papo Com A Pazy`;
           <h4
             class="today-section-title"
           >
-            ⚠ Não programado
+            Pendências
           </h4>
 
           <div
@@ -1294,7 +1256,7 @@ Papo Com A Pazy`;
                 }
               "
             >
-              ${done ? "☑" : "⚠"}
+              ${done ? "☑" : "○"}
               ${escapeHTML(
                 item.task
               )}
@@ -1449,6 +1411,10 @@ Papo Com A Pazy`;
       return "Carrossel";
     }
 
+    if (normalized.includes("olho no olho")) return "O que eu diria";
+
+    if (normalized.includes("frases")) return "Frase do dia";
+
     if (
       normalized.includes(
         "cartinh"
@@ -1489,6 +1455,8 @@ Papo Com A Pazy`;
     ) {
       return "Newsletter — Atitude de Líder";
     }
+
+    if (normalized.includes("carrosseis substack")) return null;
 
     if (
       normalized.includes(
@@ -1648,10 +1616,11 @@ Papo Com A Pazy`;
             "0"
           )}`;
 
-        state.programmedUntil[
-          key
-        ] = date;
-
+        state.programmedUntil[key] = date;
+        state.automationDates = state.automationDates || {};
+        state.automationDates[key] = date;
+        if (key === "Frase do dia") state.automationDates["Frase"] = date;
+        if (key === "O que eu diria") state.automationDates["O que eu diria"] = date;
         changes++;
       }
     );
@@ -1892,8 +1861,8 @@ Papo Com A Pazy`;
             "
           >
             O Notes salva automaticamente.
-            Linhas com conteúdo + data podem
-            atualizar a programação.
+            Linhas com conteúdo + data marcam
+            automaticamente as tarefas até a data indicada.
           </p>
 
 
@@ -2098,11 +2067,7 @@ Papo Com A Pazy`;
 
           render();
 
-          alert(
-            changes > 0
-              ? `${changes} programação(ões) atualizada(s).`
-              : "Não encontrei nenhuma linha com conteúdo e data."
-          );
+          alert(changes > 0 ? `${changes} tipo(s) de conteúdo atualizado(s) e marcado(s) no calendário até as datas indicadas.` : "Não encontrei nenhuma linha com conteúdo e data.");
         }
       );
 
